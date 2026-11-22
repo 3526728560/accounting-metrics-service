@@ -1,0 +1,7 @@
+services:
+  accounting:
+    build: .
+    container_name: accounting-demo
+    restart: unless-stopped
+    ports:
+      - "9300:9300"

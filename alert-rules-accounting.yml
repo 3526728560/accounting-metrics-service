@@ -1,0 +1,41 @@
+# ============ 记账业务告警（小程序业务示例）============
+# 将以下 group 追加到 monitoring-stack/prometheus/alert-rules.yml 末尾
+# 与主业务规则同构，仅替换指标前缀；可整段追加到 alert-rules.yml
+
+  - name: accounting
+    rules:
+      - alert: AccountingAppDown
+        expr: up{job="accounting-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "记账应用不可用"
+          description: "accounting-demo（192.168.4.14:9300）已无法访问超过 1 分钟"
+
+      - alert: AccountingUploadErrors
+        expr: increase(accounting_upload_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "凭证图片上传失败"
+          description: "最近 5 分钟内记账图片上传出现失败（调用 /api/accounting/photo-fail 触发）"
+
+      - alert: AccountingNoReports
+        expr: time() - accounting_last_report_timestamp_seconds > 600
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "记账业务长时间无上报"
+          description: "超过 10 分钟没有收到小程序记账埋点，业务可能中断（演示用阈值，实际按业务节奏设置）"
+
+      - alert: AccountingSlowApi
+        expr: histogram_quantile(0.95, rate(accounting_api_duration_seconds_bucket[5m])) > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "记账接口时延过高"
+          description: "记账接口 P95 时延超过 1 秒"
